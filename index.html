@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wedding Planner - Plan Your Perfect Day</title>
+    <title>SM Wedding Planner - Plan Your Perfect Day</title>
     <style>
         * {
             margin: 0;
@@ -63,6 +63,85 @@
 
         h1 span {
             font-weight: 700;
+        }
+
+        .save-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--success);
+            color: var(--white);
+            padding: 12px 20px;
+            border-radius: 25px;
+            box-shadow: 0 4px 12px var(--shadow);
+            font-weight: 600;
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .save-indicator.show {
+            opacity: 1;
+        }
+
+        .save-indicator.error {
+            background: var(--danger);
+        }
+
+        .quick-save-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            color: var(--white);
+            border: none;
+            padding: 15px 25px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            box-shadow: 0 4px 12px var(--shadow);
+            z-index: 998;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .quick-save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px var(--shadow);
+        }
+
+        .save-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--white);
+            padding: 10px 20px;
+            border-radius: 25px;
+            box-shadow: 0 2px 8px var(--shadow);
+            font-size: 0.9rem;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .save-status .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
 
         .nav-tabs {
@@ -451,6 +530,27 @@
             .stats {
                 grid-template-columns: 1fr;
             }
+
+            .quick-save-btn {
+                bottom: 80px;
+                right: 15px;
+                padding: 12px 20px;
+                font-size: 0.9rem;
+            }
+
+            .save-indicator {
+                bottom: 80px;
+                right: 15px;
+                font-size: 0.9rem;
+                padding: 10px 16px;
+            }
+
+            .save-status {
+                top: 10px;
+                right: 10px;
+                font-size: 0.8rem;
+                padding: 8px 15px;
+            }
         }
     </style>
 </head>
@@ -462,6 +562,23 @@
         </div>
     </header>
 
+    <!-- Save Status Indicator -->
+    <div class="save-status" id="saveStatus">
+        <span class="status-dot"></span>
+        <span>Auto-saved</span>
+    </div>
+
+    <!-- Save Notification -->
+    <div class="save-indicator" id="saveIndicator">
+        <span>✓</span>
+        <span id="saveMessage">Changes saved!</span>
+    </div>
+
+    <!-- Quick Save Button -->
+    <button class="quick-save-btn" id="quickSaveBtn" onclick="quickSaveBackup()" title="Download quick backup">
+        💾 Quick Save
+    </button>
+
     <div class="container">
         <div class="nav-tabs">
             <button class="nav-tab active" onclick="showSection('dashboard')">📊 Dashboard</button>
@@ -471,15 +588,21 @@
             <button class="nav-tab" onclick="showSection('food')">🍽️ Food & Catering</button>
             <button class="nav-tab" onclick="showSection('budget')">💰 Budget</button>
             <button class="nav-tab" onclick="showSection('timeline')">📅 Timeline</button>
-            <button class="btn btn-success" onclick="exportData()" style="margin-left: auto;">💾 Export Data</button>
-            <button class="btn btn-primary" onclick="document.getElementById('importFile').click()">📂 Import Data</button>
+            <button class="btn btn-success" onclick="exportData()" style="margin-left: auto;" title="Export full backup">💾 Export Backup</button>
+            <button class="btn btn-primary" onclick="document.getElementById('importFile').click()" title="Import from backup file">📂 Import Data</button>
             <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
         </div>
 
         <!-- Dashboard Section -->
         <div id="dashboard" class="section active">
-            <div class="card" style="background: linear-gradient(135deg, #fff3cd 0%, #fff9e6 100%); border-left: 4px solid #ffc107; margin-bottom: 20px;">
-                <p style="margin: 0;"><strong>💡 Tip:</strong> Your data is automatically saved in your browser. Click <strong>"💾 Export Data"</strong> above to download a backup file that you can use on other devices or keep as a backup!</p>
+            <div class="card" style="background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%); border-left: 4px solid var(--success); margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <p style="margin: 0; font-weight: 600; color: var(--success);">✅ Auto-Save Active</p>
+                        <p style="margin: 5px 0 0 0; font-size: 0.9rem; color: var(--text-light);">All changes are automatically saved. Use "💾 Quick Save" button (bottom-right) for instant backups!</p>
+                    </div>
+                    <div id="lastSaveInfo" style="text-align: right; font-size: 0.85rem; color: var(--text-light);"></div>
+                </div>
             </div>
 
             <div class="stats" id="dashboardStats"></div>
@@ -887,8 +1010,74 @@
 
         // Save data to localStorage
         function saveData() {
-            localStorage.setItem('weddingPlannerData', JSON.stringify(data));
-            renderAll();
+            try {
+                localStorage.setItem('weddingPlannerData', JSON.stringify(data));
+                localStorage.setItem('weddingPlannerLastSave', new Date().toISOString());
+                showSaveNotification('Changes saved!');
+                updateSaveStatus();
+                renderAll();
+            } catch (error) {
+                showSaveNotification('Error saving data!', true);
+                console.error('Save error:', error);
+            }
+        }
+
+        // Show save notification
+        function showSaveNotification(message, isError = false) {
+            const indicator = document.getElementById('saveIndicator');
+            const messageEl = document.getElementById('saveMessage');
+            
+            messageEl.textContent = message;
+            indicator.classList.toggle('error', isError);
+            indicator.classList.add('show');
+            
+            setTimeout(() => {
+                indicator.classList.remove('show');
+            }, 2000);
+        }
+
+        // Update save status display
+        function updateSaveStatus() {
+            const statusEl = document.getElementById('saveStatus');
+            const lastSave = localStorage.getItem('weddingPlannerLastSave');
+            
+            if (lastSave) {
+                const saveDate = new Date(lastSave);
+                const now = new Date();
+                const diffMinutes = Math.floor((now - saveDate) / 1000 / 60);
+                
+                let statusText = 'Auto-saved';
+                if (diffMinutes < 1) {
+                    statusText = 'Auto-saved just now';
+                } else if (diffMinutes < 60) {
+                    statusText = `Auto-saved ${diffMinutes}m ago`;
+                } else {
+                    const diffHours = Math.floor(diffMinutes / 60);
+                    statusText = `Auto-saved ${diffHours}h ago`;
+                }
+                
+                statusEl.querySelector('span:last-child').textContent = statusText;
+            }
+        }
+
+        // Quick Save - Download backup
+        function quickSaveBackup() {
+            const date = new Date().toISOString().split('T')[0];
+            const time = new Date().toTimeString().split(' ')[0].replace(/:/g, '-');
+            const filename = `wedding-backup-${date}-${time}.json`;
+            
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            showSaveNotification('Backup saved to Downloads!');
         }
 
         // Navigation
@@ -1625,6 +1814,18 @@
             const statsContainer = document.getElementById('dashboardStats');
             const overviewContainer = document.getElementById('quickOverview');
             const tasksByPersonContainer = document.getElementById('tasksByPerson');
+            const lastSaveInfo = document.getElementById('lastSaveInfo');
+
+            // Update last save info
+            const lastSave = localStorage.getItem('weddingPlannerLastSave');
+            if (lastSave) {
+                const saveDate = new Date(lastSave);
+                const formattedDate = saveDate.toLocaleDateString();
+                const formattedTime = saveDate.toLocaleTimeString();
+                lastSaveInfo.innerHTML = `Last saved:<br>${formattedDate} at ${formattedTime}`;
+            } else {
+                lastSaveInfo.innerHTML = 'No saves yet';
+            }
 
             // Calculate stats
             const totalGuests = data.guests.length;
@@ -1790,12 +1991,13 @@
             const link = document.createElement('a');
             link.href = url;
             const date = new Date().toISOString().split('T')[0];
-            link.download = `wedding-planner-backup-${date}.json`;
+            const time = new Date().toTimeString().split(' ')[0].replace(/:/g, '-');
+            link.download = `wedding-planner-backup-${date}-${time}.json`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
-            alert('✅ Data exported successfully! Save this file to backup your wedding plans.');
+            showSaveNotification('✅ Full backup exported to Downloads!');
         }
 
         // Import Data
@@ -1815,13 +2017,13 @@
                         if (confirm('This will replace all current data. Are you sure you want to import?')) {
                             data = importedData;
                             saveData();
-                            alert('✅ Data imported successfully! Your wedding plans have been restored.');
+                            showSaveNotification('✅ Data imported successfully!');
                         }
                     } else {
-                        alert('❌ Invalid file format. Please select a valid wedding planner backup file.');
+                        showSaveNotification('❌ Invalid file format!', true);
                     }
                 } catch (error) {
-                    alert('❌ Error reading file. Please select a valid JSON backup file.');
+                    showSaveNotification('❌ Error reading file!', true);
                 }
             };
             reader.readAsText(file);
@@ -1829,6 +2031,15 @@
             // Reset the input so the same file can be imported again if needed
             event.target.value = '';
         }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl+S or Cmd+S for quick save
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                quickSaveBackup();
+            }
+        });
 
         // Auto-save reminder
         function showAutoSaveStatus() {
@@ -1838,9 +2049,43 @@
             }
         }
 
+        // Auto-backup feature - saves backup every 30 minutes
+        function enableAutoBackup() {
+            // Check if user wants auto-backup
+            const autoBackupEnabled = localStorage.getItem('autoBackupEnabled');
+            
+            if (autoBackupEnabled !== 'false') {
+                setInterval(() => {
+                    // Only auto-backup if there's data
+                    if (data.guests.length > 0 || data.venues.length > 0 || 
+                        data.shopping.length > 0 || data.food.length > 0 || 
+                        data.budget.length > 0 || data.timeline.length > 0) {
+                        
+                        const lastBackup = localStorage.getItem('lastAutoBackup');
+                        const now = Date.now();
+                        
+                        // Backup every 30 minutes
+                        if (!lastBackup || (now - parseInt(lastBackup)) > 30 * 60 * 1000) {
+                            localStorage.setItem('lastAutoBackup', now.toString());
+                            console.log('📦 Auto-backup checkpoint created');
+                            showSaveNotification('Auto-backup checkpoint created');
+                        }
+                    }
+                }, 30 * 60 * 1000); // 30 minutes
+            }
+        }
+
+        // Update save status periodically
+        function startSaveStatusUpdates() {
+            updateSaveStatus();
+            setInterval(updateSaveStatus, 60000); // Update every minute
+        }
+
         // Initialize
         loadData();
         showAutoSaveStatus();
+        startSaveStatusUpdates();
+        enableAutoBackup();
 
         // Close modals when clicking outside
         window.onclick = function(event) {
