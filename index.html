@@ -69,6 +69,7 @@
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
+            align-items: center;
             background: var(--white);
             padding: 15px;
             border-radius: 10px;
@@ -437,9 +438,10 @@
                 flex-direction: column;
             }
 
-            .nav-tab {
+            .nav-tab, .nav-tabs .btn {
                 width: 100%;
                 text-align: center;
+                margin-left: 0 !important;
             }
 
             .grid {
@@ -469,10 +471,17 @@
             <button class="nav-tab" onclick="showSection('food')">🍽️ Food & Catering</button>
             <button class="nav-tab" onclick="showSection('budget')">💰 Budget</button>
             <button class="nav-tab" onclick="showSection('timeline')">📅 Timeline</button>
+            <button class="btn btn-success" onclick="exportData()" style="margin-left: auto;">💾 Export Data</button>
+            <button class="btn btn-primary" onclick="document.getElementById('importFile').click()">📂 Import Data</button>
+            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
         </div>
 
         <!-- Dashboard Section -->
         <div id="dashboard" class="section active">
+            <div class="card" style="background: linear-gradient(135deg, #fff3cd 0%, #fff9e6 100%); border-left: 4px solid #ffc107; margin-bottom: 20px;">
+                <p style="margin: 0;"><strong>💡 Tip:</strong> Your data is automatically saved in your browser. Click <strong>"💾 Export Data"</strong> above to download a backup file that you can use on other devices or keep as a backup!</p>
+            </div>
+
             <div class="stats" id="dashboardStats"></div>
             
             <div class="card">
@@ -1295,8 +1304,65 @@
             renderTimeline();
         }
 
+        // Export Data
+        function exportData() {
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            const date = new Date().toISOString().split('T')[0];
+            link.download = `wedding-planner-backup-${date}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            alert('✅ Data exported successfully! Save this file to backup your wedding plans.');
+        }
+
+        // Import Data
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    
+                    // Validate the imported data has the correct structure
+                    if (importedData.guests && importedData.venues && importedData.shopping && 
+                        importedData.food && importedData.budget && importedData.timeline) {
+                        
+                        if (confirm('This will replace all current data. Are you sure you want to import?')) {
+                            data = importedData;
+                            saveData();
+                            alert('✅ Data imported successfully! Your wedding plans have been restored.');
+                        }
+                    } else {
+                        alert('❌ Invalid file format. Please select a valid wedding planner backup file.');
+                    }
+                } catch (error) {
+                    alert('❌ Error reading file. Please select a valid JSON backup file.');
+                }
+            };
+            reader.readAsText(file);
+            
+            // Reset the input so the same file can be imported again if needed
+            event.target.value = '';
+        }
+
+        // Auto-save reminder
+        function showAutoSaveStatus() {
+            const lastSaved = localStorage.getItem('weddingPlannerData');
+            if (lastSaved) {
+                console.log('✅ Auto-save is working. Your data is being saved automatically.');
+            }
+        }
+
         // Initialize
         loadData();
+        showAutoSaveStatus();
 
         // Close modals when clicking outside
         window.onclick = function(event) {
