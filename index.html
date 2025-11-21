@@ -508,6 +508,29 @@
             opacity: 0.3;
         }
 
+        .filter-section {
+            background: var(--bg-light);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            border: 1px solid var(--border);
+        }
+
+        .filter-section label {
+            margin: 0;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .filter-section select {
+            flex: 0 1 auto;
+            min-width: 180px;
+        }
+
         @media (max-width: 768px) {
             h1 {
                 font-size: 1.8rem;
@@ -630,6 +653,17 @@
                     <button class="btn btn-primary" onclick="openGuestModal()">+ Add Guest</button>
                 </div>
                 <div id="guestStats"></div>
+                <div class="filter-section">
+                    <label for="guestFilter">🔍 Filter by Side:</label>
+                    <select id="guestFilter" onchange="renderGuests()">
+                        <option value="all">All Guests</option>
+                        <option value="bride">👰 Bride's Side</option>
+                        <option value="groom">🤵 Groom's Side</option>
+                        <option value="both">💑 Both/Mutual</option>
+                    </select>
+                    <button class="btn btn-small" onclick="clearGuestFilter()" style="background: var(--border); color: var(--text-dark);">Clear Filter</button>
+                    <span id="guestFilterCount" style="color: var(--text-light); font-size: 0.9rem; margin-left: auto;"></span>
+                </div>
                 <div id="guestsList"></div>
             </div>
         </div>
@@ -654,6 +688,23 @@
                 </div>
                 <div class="progress-bar">
                     <div class="progress-fill" id="shoppingProgress">0%</div>
+                </div>
+                <div class="filter-section">
+                    <label for="shoppingFilter">🔍 Filter by:</label>
+                    <select id="shoppingFilter" onchange="renderShopping()">
+                        <option value="all">All Items</option>
+                        <option value="status-pending">⏳ Pending Only</option>
+                        <option value="status-completed">✅ Completed Only</option>
+                        <option value="priority-high">🔴 High Priority</option>
+                        <option value="priority-medium">🟡 Medium Priority</option>
+                        <option value="priority-low">🟢 Low Priority</option>
+                    </select>
+                    <label for="shoppingOwnerFilter">👤 Assigned to:</label>
+                    <select id="shoppingOwnerFilter" onchange="renderShopping()">
+                        <option value="all">All People</option>
+                    </select>
+                    <button class="btn btn-small" onclick="clearShoppingFilters()" style="background: var(--border); color: var(--text-dark);">Clear Filters</button>
+                    <span id="shoppingFilterCount" style="color: var(--text-light); font-size: 0.9rem; margin-left: auto;"></span>
                 </div>
                 <div id="shoppingList"></div>
             </div>
@@ -1218,14 +1269,31 @@
             }
         }
 
+        function clearGuestFilter() {
+            const filterEl = document.getElementById('guestFilter');
+            if (filterEl) {
+                filterEl.value = 'all';
+                renderGuests();
+            }
+        }
+
         function renderGuests() {
             const container = document.getElementById('guestsList');
             const statsContainer = document.getElementById('guestStats');
+            const filterValue = document.getElementById('guestFilter') ? document.getElementById('guestFilter').value : 'all';
+            const filterCountEl = document.getElementById('guestFilterCount');
             
             if (data.guests.length === 0) {
                 statsContainer.innerHTML = '';
                 container.innerHTML = '<div class="empty-state"><p>No guests added yet. Start building your guest list!</p></div>';
+                if (filterCountEl) filterCountEl.textContent = '';
                 return;
+            }
+            
+            // Filter guests based on selection
+            let filteredGuests = data.guests;
+            if (filterValue !== 'all') {
+                filteredGuests = data.guests.filter(g => g.side === filterValue);
             }
 
             // Calculate guest statistics
@@ -1304,8 +1372,24 @@
                 </div>
             `;
 
+            // Update filter count
+            if (filterCountEl) {
+                if (filterValue === 'all') {
+                    filterCountEl.textContent = `Showing all ${filteredGuests.length} guests`;
+                } else {
+                    const sideLabel = filterValue === 'bride' ? "Bride's Side" : filterValue === 'groom' ? "Groom's Side" : "Both/Mutual";
+                    filterCountEl.textContent = `Showing ${filteredGuests.length} of ${data.guests.length} guests (${sideLabel})`;
+                }
+            }
+
+            if (filteredGuests.length === 0) {
+                const sideLabel = filterValue === 'bride' ? "bride's side" : filterValue === 'groom' ? "groom's side" : "both/mutual";
+                container.innerHTML = `<div class="empty-state"><p>No guests found for ${sideLabel}. Try a different filter.</p></div>`;
+                return;
+            }
+
             let html = '<table><thead><tr><th>Name</th><th>Side</th><th>Contact</th><th>RSVP</th><th># Persons</th><th>Room</th><th>Diet</th><th>Actions</th></tr></thead><tbody>';
-            data.guests.forEach(guest => {
+            filteredGuests.forEach(guest => {
                 const rsvpBadge = guest.rsvp === 'confirmed' ? 'badge-success' : guest.rsvp === 'declined' ? 'badge-danger' : 'badge-warning';
                 const sideBadge = guest.side === 'bride' ? 'badge-info' : guest.side === 'groom' ? 'badge-success' : 'badge-warning';
                 const sideLabel = guest.side === 'bride' ? '👰 Bride' : guest.side === 'groom' ? '🤵 Groom' : guest.side === 'both' ? '💑 Both' : 'N/A';
@@ -1501,8 +1585,41 @@
             }
         }
 
+        function clearShoppingFilters() {
+            const filterEl = document.getElementById('shoppingFilter');
+            const ownerFilterEl = document.getElementById('shoppingOwnerFilter');
+            if (filterEl) filterEl.value = 'all';
+            if (ownerFilterEl) ownerFilterEl.value = 'all';
+            renderShopping();
+        }
+
         function renderShopping() {
             const container = document.getElementById('shoppingList');
+            const filterValue = document.getElementById('shoppingFilter') ? document.getElementById('shoppingFilter').value : 'all';
+            const ownerFilterValue = document.getElementById('shoppingOwnerFilter') ? document.getElementById('shoppingOwnerFilter').value : 'all';
+            const filterCountEl = document.getElementById('shoppingFilterCount');
+            
+            // Populate owner filter dropdown
+            const ownerFilter = document.getElementById('shoppingOwnerFilter');
+            if (ownerFilter) {
+                const currentOwnerValue = ownerFilter.value;
+                const owners = new Set();
+                data.shopping.forEach(item => {
+                    if (item.owner && item.owner.trim() !== '') {
+                        owners.add(item.owner.trim());
+                    }
+                });
+                
+                let ownerOptions = '<option value="all">All People</option>';
+                if (owners.size > 0) {
+                    ownerOptions += '<option value="unassigned">Unassigned</option>';
+                    [...owners].sort().forEach(owner => {
+                        ownerOptions += `<option value="${owner}">${owner}</option>`;
+                    });
+                }
+                ownerFilter.innerHTML = ownerOptions;
+                ownerFilter.value = currentOwnerValue;
+            }
             
             // Update progress bar
             const completed = data.shopping.filter(i => i.completed).length;
@@ -1513,11 +1630,50 @@
 
             if (data.shopping.length === 0) {
                 container.innerHTML = '<div class="empty-state"><p>No shopping items yet. Add what you need to buy!</p></div>';
+                if (filterCountEl) filterCountEl.textContent = '';
+                return;
+            }
+            
+            // Filter shopping items
+            let filteredItems = data.shopping;
+            
+            // Apply status/priority filter
+            if (filterValue !== 'all') {
+                if (filterValue === 'status-pending') {
+                    filteredItems = filteredItems.filter(i => !i.completed);
+                } else if (filterValue === 'status-completed') {
+                    filteredItems = filteredItems.filter(i => i.completed);
+                } else if (filterValue.startsWith('priority-')) {
+                    const priority = filterValue.split('-')[1];
+                    filteredItems = filteredItems.filter(i => i.priority === priority);
+                }
+            }
+            
+            // Apply owner filter
+            if (ownerFilterValue !== 'all') {
+                if (ownerFilterValue === 'unassigned') {
+                    filteredItems = filteredItems.filter(i => !i.owner || i.owner.trim() === '');
+                } else {
+                    filteredItems = filteredItems.filter(i => i.owner === ownerFilterValue);
+                }
+            }
+            
+            // Update filter count
+            if (filterCountEl) {
+                if (filterValue === 'all' && ownerFilterValue === 'all') {
+                    filterCountEl.textContent = `Showing all ${filteredItems.length} items`;
+                } else {
+                    filterCountEl.textContent = `Showing ${filteredItems.length} of ${data.shopping.length} items`;
+                }
+            }
+
+            if (filteredItems.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>No items match your filters. Try a different filter combination.</p></div>';
                 return;
             }
 
             let html = '<table><thead><tr><th>Done</th><th>Item</th><th>Category</th><th>Cost</th><th>Priority</th><th>Assigned To</th><th>Actions</th></tr></thead><tbody>';
-            data.shopping.forEach(item => {
+            filteredItems.forEach(item => {
                 const priorityBadge = item.priority === 'high' ? 'badge-danger' : item.priority === 'medium' ? 'badge-warning' : 'badge-info';
                 html += `
                     <tr style="${item.completed ? 'opacity: 0.6; text-decoration: line-through;' : ''}">
