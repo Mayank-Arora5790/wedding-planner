@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SM Wedding Planner - Plan Your Perfect Day</title>
+    <title>Wedding Planner - Plan Your Perfect Day</title>
     <style>
         * {
             margin: 0;
@@ -1232,7 +1232,12 @@
             const brideGuests = data.guests.filter(g => g.side === 'bride').length;
             const groomGuests = data.guests.filter(g => g.side === 'groom').length;
             const bothGuests = data.guests.filter(g => g.side === 'both').length;
-            const roomsNeeded = data.guests.filter(g => g.roomRequired).length;
+            
+            // Calculate rooms needed by side
+            const brideRooms = data.guests.filter(g => g.side === 'bride' && g.roomRequired).length;
+            const groomRooms = data.guests.filter(g => g.side === 'groom' && g.roomRequired).length;
+            const bothRooms = data.guests.filter(g => g.side === 'both' && g.roomRequired).length;
+            const totalRooms = brideRooms + groomRooms + bothRooms;
             
             // Calculate total persons
             let totalPersons = 0;
@@ -1278,9 +1283,23 @@
                         <div class="stat-number">${bothPersons}</div>
                         <div class="stat-label">💑 Both/Mutual</div>
                     </div>
+                </div>
+                <div class="stats" style="margin-bottom: 20px;">
                     <div class="stat-card" style="background: linear-gradient(135deg, #ffab91 0%, #ff8a65 100%);">
-                        <div class="stat-number">${roomsNeeded}</div>
-                        <div class="stat-label">🏨 Rooms Needed</div>
+                        <div class="stat-number">${totalRooms}</div>
+                        <div class="stat-label">🏨 Total Rooms</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #f8bbd0 0%, #f48fb1 100%);">
+                        <div class="stat-number">${brideRooms}</div>
+                        <div class="stat-label">🏨 Bride's Rooms</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #90caf9 0%, #64b5f6 100%);">
+                        <div class="stat-number">${groomRooms}</div>
+                        <div class="stat-label">🏨 Groom's Rooms</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #ce93d8 0%, #ba68c8 100%);">
+                        <div class="stat-number">${bothRooms}</div>
+                        <div class="stat-label">🏨 Both/Mutual Rooms</div>
                     </div>
                 </div>
             `;
@@ -1940,7 +1959,12 @@
             // Quick overview
             const bookedVenue = data.venues.find(v => v.status === 'booked');
             const upcomingEvents = data.timeline.filter(e => !e.completed).slice(0, 3);
-            const roomsNeeded = data.guests.filter(g => g.roomRequired).length;
+            
+            // Calculate rooms by side
+            const brideRoomsCount = data.guests.filter(g => g.side === 'bride' && g.roomRequired).length;
+            const groomRoomsCount = data.guests.filter(g => g.side === 'groom' && g.roomRequired).length;
+            const bothRoomsCount = data.guests.filter(g => g.side === 'both' && g.roomRequired).length;
+            const totalRoomsCount = brideRoomsCount + groomRoomsCount + bothRoomsCount;
 
             let overviewHtml = '<h3 style="margin-bottom: 15px;">Quick Overview</h3>';
             
@@ -1950,8 +1974,16 @@
                 overviewHtml += `<p><strong>✓ Venue Booked:</strong> ${bookedVenue.name} at ${bookedVenue.location}</p>`;
             }
 
-            if (roomsNeeded > 0) {
-                overviewHtml += `<p><strong>🏨 Accommodation Needed:</strong> ${roomsNeeded} guest${roomsNeeded > 1 ? 's' : ''} require${roomsNeeded === 1 ? 's' : ''} rooms</p>`;
+            if (totalRoomsCount > 0) {
+                overviewHtml += `<p><strong>🏨 Accommodation Needed:</strong> ${totalRoomsCount} total rooms`;
+                if (brideRoomsCount > 0 || groomRoomsCount > 0) {
+                    overviewHtml += ` (👰 ${brideRoomsCount} bride's side, 🤵 ${groomRoomsCount} groom's side`;
+                    if (bothRoomsCount > 0) {
+                        overviewHtml += `, 💑 ${bothRoomsCount} both`;
+                    }
+                    overviewHtml += `)`;
+                }
+                overviewHtml += `</p>`;
             }
 
             if (upcomingEvents.length > 0) {
